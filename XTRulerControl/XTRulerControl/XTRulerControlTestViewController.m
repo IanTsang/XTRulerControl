@@ -21,7 +21,7 @@
         _rulerControl = [[XTArcRulerControl alloc] initWithRuler:[[XTRuler alloc] init]];
         _rulerControl.radius = 800;
         _rulerControl.backgroundColor = [UIColor colorWithWhite:0.8 alpha:0.8];
-
+        _rulerControl.selectedValue = 800;
     }
     return _rulerControl;
 }

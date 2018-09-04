@@ -96,8 +96,53 @@
     [self.currentRuler.backgroundColor set];
     [arcPath fill];
     
-    
+    [self drawRuler:self.currentRuler];
     [self drawIndicator];
+    
+}
+
+- (void)drawRuler:(XTRuler *)ruler {
+    // 1.根据当前值计算开始角度
+    
+    // >顺时针方向离当前值最近的刻度的值
+//    NSInteger previousScaleCount = (NSInteger)((self.selectedValue - ruler.minValue) / ruler.scaleValue * ruler.scaleValue);
+//    CGFloat nearValue = self.selectedValue - previousScaleCount * ruler.scaleValue
+    CGFloat leftNearValue = self.selectedValue;
+    while (leftNearValue >= ruler.scaleValue) {
+        leftNearValue -= ruler.scaleValue;
+    }
+    CGFloat rightNearValue = ruler.scaleValue - leftNearValue;
+
+    CGFloat rightStartAngle = ruler.scaleAngle * (rightNearValue / ruler.scaleValue);
+    
+    CGFloat drawAngle = rightStartAngle;
+    UIBezierPath *path = [UIBezierPath bezierPath];
+    XTRulerScale *scale = ruler.markScale;
+    while (drawAngle < M_PI) {
+       
+        CGPoint startPoint = [self arcPointWithCenter:self.arcCenter raidus:self.radius - scale.topSpacing angle:[self correctAngle:drawAngle]];
+        CGPoint endPoint = [self arcPointWithCenter:self.arcCenter raidus:self.radius - scale.topSpacing - scale.height angle:[self correctAngle:drawAngle]];
+
+        [path moveToPoint:startPoint];
+        [path addLineToPoint:endPoint];
+        
+        drawAngle += ruler.scaleAngle;
+    }
+    
+    CGFloat leftStartAngle = -(ruler.scaleAngle * (leftNearValue/ ruler.scaleValue));
+    drawAngle = leftStartAngle;
+    while (drawAngle > -M_PI) {
+        CGPoint startPoint = [self arcPointWithCenter:self.arcCenter raidus:self.radius - scale.topSpacing angle:[self correctAngle:drawAngle]];
+        CGPoint endPoint = [self arcPointWithCenter:self.arcCenter raidus:self.radius - scale.topSpacing - scale.height angle:[self correctAngle:drawAngle]];
+        [path moveToPoint:startPoint];
+        [path addLineToPoint:endPoint];
+        drawAngle -= ruler.scaleAngle;
+    }
+    
+    path.lineWidth = scale.width;
+    path.lineCapStyle = scale.lineCap;
+    [scale.color setStroke];
+    [path stroke];
     
 }
 
@@ -141,11 +186,43 @@
 }
 
 - (void)onPan:(UIPanGestureRecognizer *)gesture {
-    NSLog(@"%s",__func__);
-    if (gesture.state == UIGestureRecognizerStateEnded) {
-        CGPoint speed = [gesture velocityInView:self];
-        NSLog(@"velocityInView %@", @(speed));
+    static CGPoint previousTrans;
+    switch (gesture.state) {
+        case UIGestureRecognizerStateBegan:
+            previousTrans = CGPointZero;
+            break;
+        case UIGestureRecognizerStateEnded: {
+            CGPoint speed = [gesture velocityInView:self];
+            NSLog(@"velocityInView %@", @(speed));
+        }
+            
+            break;
+        case UIGestureRecognizerStateChanged: {
+            CGPoint translation = [gesture translationInView:self];
+            CGFloat moveX = translation.x - previousTrans.x;
+            CGFloat moveY = translation.y - previousTrans.y;
+            previousTrans = translation;
+            
+            CGFloat realMoveX = moveX * cos(self.directionAngle);
+            CGFloat realMoveY = moveY * sin(self.directionAngle);
+            CGFloat move = sqrt(realMoveX * realMoveX + realMoveY * realMoveY);
 
+            //计算偏转角度
+            CGFloat moveAngle = asin(move/self.radius);
+            if (realMoveX < 0 ||
+                realMoveY < 0) {
+                moveAngle = -moveAngle;
+            }
+
+            
+            //根据偏转角度计算当前值
+            self.selectedValue -= moveAngle * self.currentRuler.scaleValue/self.currentRuler.scaleAngle;
+//            NSLog(@"pan translation %@ x:%@", NSStringFromCGPoint(translation), @(moveX));
+        }
+            
+            break;
+        default:
+            break;
     }
 }
 
@@ -185,13 +262,6 @@
     CGFloat y = center.y + radius * sin(angle);
     return CGPointMake(x, y);
 }
-
-- (CGPoint)arcPointWithCenter:(CGPoint)center raidus:(CGFloat)radius angle:(CGFloat)angle size:(CGSize)size {
-    CGFloat x = center.x + size.width/2 * cos(angle);
-    CGFloat y = center.y + size.height/2 * sin(angle);
-    return CGPointMake(x, y);
-}
-
 
 /**
  根据角度获取椭圆上一点的坐标
@@ -250,6 +320,7 @@
 }
 
 - (CGPoint)arcCenter {
+    //TODO: arcCenter需要频繁使用，在getter实时计算可能比较耗性能，待优化
     CGFloat radius = self.radius + self.arcLineWidth/2;
     CGPoint rotateCenter = CGPointMake(self.width/2, self.height/2);
     //不同角度对应圆弧的中心点的轨迹是一个椭圆
@@ -275,6 +346,11 @@
 
 - (void)setDirectionAngle:(CGFloat)directionAngle {
     _directionAngle = directionAngle;
+    [self setNeedsDisplay];
+}
+
+- (void)setSelectedValue:(CGFloat)selectedValue {
+    _selectedValue = selectedValue;
     [self setNeedsDisplay];
 }
 
