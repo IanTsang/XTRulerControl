@@ -10,6 +10,7 @@
 		8C24737E2137C318007FDB77 /* XTRulerControlTestViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 8C24737D2137C318007FDB77 /* XTRulerControlTestViewController.m */; };
 		8C2A28F2213931BB0063F948 /* XTArcRulerControl.m in Sources */ = {isa = PBXBuildFile; fileRef = 8C2A28F1213931BB0063F948 /* XTArcRulerControl.m */; };
 		8C2C068F213CC74D007A2DD2 /* UIViewExt.m in Sources */ = {isa = PBXBuildFile; fileRef = 8C2C068D213CC74D007A2DD2 /* UIViewExt.m */; };
+		8C9BB87F213FAC5D007E23F6 /* NSString+XTRuler.m in Sources */ = {isa = PBXBuildFile; fileRef = 8C9BB87E213FAC5D007E23F6 /* NSString+XTRuler.m */; };
 		8C9C8F242133CF4400627D60 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 8C9C8F232133CF4400627D60 /* AppDelegate.m */; };
 		8C9C8F272133CF4400627D60 /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 8C9C8F262133CF4400627D60 /* ViewController.m */; };
 		8C9C8F2A2133CF4400627D60 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 8C9C8F282133CF4400627D60 /* Main.storyboard */; };
@@ -26,6 +27,8 @@
 		8C2A28F1213931BB0063F948 /* XTArcRulerControl.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XTArcRulerControl.m; sourceTree = "<group>"; };
 		8C2C068D213CC74D007A2DD2 /* UIViewExt.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = UIViewExt.m; sourceTree = "<group>"; };
 		8C2C068E213CC74D007A2DD2 /* UIViewExt.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = UIViewExt.h; sourceTree = "<group>"; };
+		8C9BB87D213FAC5D007E23F6 /* NSString+XTRuler.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSString+XTRuler.h"; sourceTree = "<group>"; };
+		8C9BB87E213FAC5D007E23F6 /* NSString+XTRuler.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "NSString+XTRuler.m"; sourceTree = "<group>"; };
 		8C9C8F1F2133CF4400627D60 /* XTRulerControl.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = XTRulerControl.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		8C9C8F222133CF4400627D60 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		8C9C8F232133CF4400627D60 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
@@ -94,6 +97,8 @@
 				8C9C8F392133CF9A00627D60 /* XTRulerControl.m */,
 				8C2A28F0213931BB0063F948 /* XTArcRulerControl.h */,
 				8C2A28F1213931BB0063F948 /* XTArcRulerControl.m */,
+				8C9BB87D213FAC5D007E23F6 /* NSString+XTRuler.h */,
+				8C9BB87E213FAC5D007E23F6 /* NSString+XTRuler.m */,
 				8C2C068C213CC74D007A2DD2 /* UIViewExt */,
 			);
 			path = XTRulerControl;
@@ -175,6 +180,7 @@
 				8C2A28F2213931BB0063F948 /* XTArcRulerControl.m in Sources */,
 				8C9C8F322133CF4500627D60 /* main.m in Sources */,
 				8C9C8F3A2133CF9A00627D60 /* XTRulerControl.m in Sources */,
+				8C9BB87F213FAC5D007E23F6 /* NSString+XTRuler.m in Sources */,
 				8C9C8F242133CF4400627D60 /* AppDelegate.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

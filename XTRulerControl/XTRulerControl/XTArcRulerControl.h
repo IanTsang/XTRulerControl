@@ -8,7 +8,7 @@
 
 #import <UIKit/UIKit.h>
 #import "UIViewExt.h"
-
+#import "NSString+XTRuler.h"
 /**
  刻度尺填充区域类
  */
@@ -30,6 +30,17 @@
 @end
 
 /**
+ 标记方向类型
+ 
+ - XTRulerMarkDirectionVertical: 默认垂直于刻度
+ - XTRulerMarkDirectionHorizontal: 跟刻度平行
+ */
+typedef NS_ENUM(NSUInteger, XTRulerMarkDirection) {
+    XTRulerMarkDirectionVertical,
+    XTRulerMarkDirectionHorizontal,
+};
+
+/**
  刻度尺属性
  */
 @interface XTRuler : NSObject
@@ -48,32 +59,13 @@
 @property (nonatomic, assign) CGFloat markFontSize;                 /**< 标记字体大小 */
 @property (nonatomic, strong) UIColor *markFontColor;               /**< 标记字体颜色 */
 @property (nonatomic, assign) CGFloat markTopSpacing;               /**< 标记顶部间距（距离圆弧距离） */
+@property (nonatomic, assign) XTRulerMarkDirection markDirection;   /**< 标记方向 default = XTRulerMarkDirectionVertical */
 @property (nonatomic, assign) NSInteger minorScaleCount;            /**< 一个大刻度间的小刻度数量 */
 @property (nonatomic, assign) NSInteger markMajorScaleCount;        /**< 几个大刻度做一个数值标记 */
 @property (nonatomic, copy) NSString *(^markRule)(CGFloat value);   /**< 指定value的刻度应该怎么显示 */
 @property (nonatomic, copy) NSArray<XTRulerFillArea *> *fillAreas;  /**< 填充区域 */
 
 @end
-
-
-/**
- 标记方向类型
-
- - XTRulerMarkDirectionUp: 默认向上
- - XTRulerMarkDirectionFollowScale: 跟随刻度方向
- */
-typedef NS_ENUM(NSUInteger, XTRulerMarkDirection) {
-    XTRulerMarkDirectionUp,
-    XTRulerMarkDirectionFollowScale,
-};
-
-//typedef NS_ENUM(NSUInteger, XTRulerIndicatorDirection) {
-//    XTRulerIndicatorDirectionUp,
-//    XTRulerIndicatorDirectionDown,
-//    XTRulerIndicatorDirectionLeft,
-//    XTRulerIndicatorDirectionRight,
-//
-//};
 
 /**
  刻度尺
@@ -83,14 +75,21 @@ typedef NS_ENUM(NSUInteger, XTRulerMarkDirection) {
 @property (nonatomic, assign) CGFloat selectedValue;                /**< 选中的值 */
 @property (nonatomic, assign) CGFloat directionAngle;               /**< 刻度尺总体方向, range is [0, PI*2], default is PI*1.5 */
 @property (nonatomic, assign) CGFloat radius;                       /**< 圆弧半径，默认等于刻度尺宽度（self.frame.size.width） */
-@property (nonatomic, assign) XTRulerMarkDirection markDirection;   /**< 标记方向 default = XTRulerMarkDirectionUp */
-
 @property (nonatomic, strong) UIColor *indicatorColor;              /**< 指示条颜色 */
+@property (nonatomic, assign) BOOL enableZoom; /**< 缩放开关，默认开 */
 
 - (instancetype)init NS_UNAVAILABLE;
 - (instancetype)initWithRuler:(XTRuler *)ruler;
-- (instancetype)initWithRulers:(NSArray<XTRuler *> *)rulers zoomScales:(NSArray<NSNumber *> *)zoomScales;
+//- (instancetype)initWithRulers:(NSArray<XTRuler *> *)rulers zoomScales:(NSArray<NSNumber *> *)zoomScales;
 
+
+/**
+ 使用此构造方法进行创建，支持通过缩放手势在多个刻度尺间进行切换
+
+ @param mulRulers 刻度尺信息，key为缩放倍数，value为对应的刻度尺属性，必须至少包含一个key=@(1)的项作为默认刻度尺
+ @return 对象
+ */
+- (instancetype)initWithMultipleRulers:(NSDictionary<NSNumber*, XTRuler*> *)mulRulers;
 
 @end
 
