@@ -8,6 +8,10 @@
 
 #import "XTArcRulerControl.h"
 
+@implementation XTRulerFillArea
+
+@end
+
 @implementation XTRulerScale
 
 - (instancetype)init
@@ -60,11 +64,9 @@
 @interface XTArcRulerControl ()
 @property (nonatomic, assign) CGPoint arcCenter;        /**< 圆弧中心点 */
 @property (nonatomic, assign) CGFloat arcLineWidth;     /**< 圆弧stroke时线的宽度 */
-//@property (nonatomic, copy) NSArray<XTRuler *> *rulers;
-//@property (nonatomic, copy) NSArray<NSNumber *> *zoomScales;
-@property (nonatomic, copy) NSDictionary<NSNumber*, XTRuler*> *mulRulers; /**< 不同缩放倍率对应的刻度尺 */
 @property (nonatomic, strong) XTRuler *currentRuler;    /**< 当前刻度尺 */
 @property (nonatomic, assign) CGFloat currentZoomScale; /**< 当前缩放倍率 */
+@property (nonatomic, copy)   NSDictionary<NSNumber*, XTRuler*> *mulRulers; /**< 不同缩放倍率对应的刻度尺 */
 @end
 
 @implementation XTArcRulerControl
@@ -77,35 +79,38 @@
     }
     return [self initWithMultipleRulers:@{@(1):ruler}];
 }
-//- (instancetype)initWithRulers:(NSArray<XTRuler *> *)rulers zoomScales:(NSArray<NSNumber *> *)zoomScales {
-//    if (self = [super init]) {
-//        self.backgroundColor = [UIColor clearColor];
-//        self.currentRuler = rulers.firstObject;
-//        self.currentZoomScale = 1;
-//        self.enableZoom = YES;
-//        [self addGestures];
-//    }
-//    return self;
-//}
 
 - (instancetype)initWithMultipleRulers:(NSDictionary<NSNumber*, XTRuler*> *)mulRulers {
     NSAssert([mulRulers.allKeys containsObject:@(1)], @"MultipleRulers必须包含key为@(1)的项");
     NSAssert([mulRulers[@(1)] isKindOfClass:[XTRuler class]], @"MultipleRulers的key=@(1)的值必须为XTRuler对象");
     if (self = [super init]) {
         self.backgroundColor = [UIColor clearColor];
-        self.mulRulers = mulRulers;
-        self.currentRuler = mulRulers[@(1)];
-        self.currentZoomScale = 1;
-        self.enableZoom = YES;
+        _mulRulers = [mulRulers copy];
+        _currentRuler = mulRulers[@(1)];
+        _currentZoomScale = 1;
+        _enableZoom = YES;
         [self addGestures];
     }
     return self;
 }
 
-
+#pragma mark - 绘制刻度尺
 - (void)drawRect:(CGRect)rect {
     
-    //画圆
+    //画圆盘
+    [self drawArcDisk];
+    
+    //画填充区域
+    [self drawFillAreas];
+    
+    //画刻度
+    [self drawRuler:self.currentRuler];
+    
+    //画指针
+    [self drawIndicator];
+}
+
+- (void)drawArcDisk {
     UIBezierPath *arcPath = [UIBezierPath bezierPathWithArcCenter:self.arcCenter radius:self.radius startAngle:0 endAngle:M_PI*2 clockwise:YES];
     arcPath.lineWidth = self.arcLineWidth;
     [[UIColor clearColor] set];
@@ -113,12 +118,41 @@
     
     [self.currentRuler.backgroundColor set];
     [arcPath fill];
+}
+
+- (void)drawFillAreas {
+    CGFloat zoomScaleAngle = [self zoomScaleAngle]; //每个刻度的角度
+    CGFloat halfArcValue = M_PI/zoomScaleAngle * self.currentRuler.scaleValue; //半圆包含的值范围
+    CGFloat minValue = self.selectedValue - halfArcValue; //圆最小值
+    CGFloat maxValue = self.selectedValue + halfArcValue; //圆最大值
     
-    //画刻度
-    [self drawRuler:self.currentRuler];
-    
-    //画指针
-    [self drawIndicator];
+    CGFloat valuePerAngle = self.currentRuler.scaleValue/zoomScaleAngle; //
+    for (XTRulerFillArea *fillArea in self.fillAreas) {
+        //计算填充区域值和圆值范围的交集
+        NSRange racRange = NSMakeRange((NSUInteger)minValue*100, (NSUInteger)(fabs(maxValue-minValue)*100));
+        NSRange fillRange = NSMakeRange((NSUInteger)fillArea.beginValue*100, (NSUInteger)(fabs(fillArea.beginValue-fillArea.endValue)*100));
+        NSRange intersectionRange = NSIntersectionRange(racRange, fillRange);
+        if (intersectionRange.length <= 0) {
+            continue;
+        }
+        
+        //根据交集进行填充
+        CGFloat fillBeginValue = ((CGFloat)intersectionRange.location) / 100.0;
+        CGFloat fillEndValue = ((CGFloat)(intersectionRange.location + intersectionRange.length)) / 100.0;
+        CGFloat fillBeginAngle = (fillBeginValue - self.selectedValue) / valuePerAngle;
+        CGFloat fillEndAngle = (fillEndValue - self.selectedValue) / valuePerAngle;
+        if (fillBeginAngle > M_PI_2) {
+            continue;
+        }
+        if (fillEndAngle > M_PI_2) {
+            fillEndAngle = M_PI_2;
+        }
+        
+        UIBezierPath *fillPath = [UIBezierPath bezierPathWithArcCenter:self.arcCenter radius:self.radius startAngle:[self correctAngle:fillBeginAngle] endAngle:[self correctAngle:fillEndAngle] clockwise:YES];
+        [fillPath addLineToPoint:self.arcCenter];
+        [fillArea.fillColor set];
+        [fillPath fill];
+    }
 }
 
 - (void)drawRuler:(XTRuler *)ruler {
@@ -130,7 +164,6 @@
     // 1.根据当前值计算开始角度
     
     // >每个刻度的角度
-//    CGFloat zoomScaleAngle = ruler.scaleAngle * self.currentZoomScale; //缩放后的每个刻度角度
     CGFloat zoomScaleAngle = [self zoomScaleAngle]; //缩放后的每个刻度角度
 
     // >计算当前值距离左右刻度间的值差
@@ -154,9 +187,11 @@
     UIBezierPath *path = [UIBezierPath bezierPath];
     while (drawAngle < M_PI) {
         XTRulerScale *scale = [self scaleWithRuler:ruler Value:drawValue];
+        if (!scale) {
+            continue;
+        }
         CGPoint startPoint = [self arcPointWithCenter:self.arcCenter raidus:self.radius - scale.topSpacing angle:[self correctAngle:drawAngle]];
         CGPoint endPoint = [self arcPointWithCenter:self.arcCenter raidus:self.radius - scale.topSpacing - scale.height angle:[self correctAngle:drawAngle]];
-
         path.lineWidth = scale.width;
         path.lineCapStyle = scale.lineCap;
         [path moveToPoint:startPoint];
@@ -176,6 +211,9 @@
     drawValue = floor((self.selectedValue-ruler.minValue)/ruler.scaleValue) * ruler.scaleValue + ruler.minValue;
     while (drawAngle > -M_PI) {
         XTRulerScale *scale = [self scaleWithRuler:ruler Value:drawValue];
+        if (!scale) {
+            continue;
+        }
         CGPoint startPoint = [self arcPointWithCenter:self.arcCenter raidus:self.radius - scale.topSpacing angle:[self correctAngle:drawAngle]];
         CGPoint endPoint = [self arcPointWithCenter:self.arcCenter raidus:self.radius - scale.topSpacing - scale.height angle:[self correctAngle:drawAngle]];
         
@@ -212,13 +250,13 @@
         markCenterPoint = [self arcPointWithCenter:self.arcCenter raidus:self.radius - ruler.markTopSpacing - textSize.width/2  angle:[self correctAngle:angle]];
 
     }
-    [markStr drawWithBasePoint:markCenterPoint angle:markRotateAngle font:markFont color:ruler.markFontColor];
+    [markStr xt_drawWithCenterPoint:markCenterPoint angle:markRotateAngle font:markFont color:ruler.markFontColor];
 }
 
 - (void)drawIndicator {
     [self.indicatorColor set];
     //上三角
-    CGFloat angle = 7.5/800;
+    CGFloat angle = 7.5/self.radius;
     UIBezierPath *path = [UIBezierPath bezierPathWithArcCenter:self.arcCenter radius:self.radius startAngle:[self correctAngle:-angle] endAngle:[self correctAngle:angle] clockwise:YES];
     [path addLineToPoint:[self arcPointWithCenter:self.arcCenter raidus:self.radius-12 angle:[self correctAngle:0]]];
     
@@ -229,40 +267,6 @@
     [path addLineToPoint:[self arcPointWithCenter:self.arcCenter raidus:pointToCenter angle:[self correctAngle:M_PI_2]]];
     [path fill];
 }
-
-
-/**
- 根据尺子对象和值返回对应的刻度属性对象
-
- @param ruler 尺子
- @param value 值
- @return 刻度
- */
-- (XTRulerScale *)scaleWithRuler:(XTRuler *)ruler Value:(CGFloat)value {
-    CGFloat increValue = value - ruler.minValue; //值和最小值（原点）的值差
-    CGFloat increRatio = increValue/ruler.scaleValue; //和刻度间值的倍数
-    if (increRatio - (NSInteger)(increRatio) != 0) { //没有整除说明这个值不需要画刻度
-        return nil;
-    }
-    
-    NSInteger iRatio = (NSInteger)increRatio;
-    if (iRatio % (ruler.minorScaleCount * ruler.markMajorScaleCount) == 0) {
-//        NSLog(@"大刻度M selectedValue:%@ value:%@ increValue:%@ increRatio:%@",@(_selectedValue), @(value), @(increValue), @(increRatio));
-
-        return ruler.markScale;
-    }
-    
-    if (iRatio % ruler.minorScaleCount == 0) {
-//        NSLog(@"大刻度U selectedValue:%@ value:%@ increValue:%@ increRatio:%@",@(_selectedValue), @(value), @(increValue), @(increRatio));
-
-        return ruler.unmarkScale;
-    }
-    
-//    NSLog(@"小刻度 selectedValue:%@ value:%@ increValue:%@ increRatio:%@",@(_selectedValue), @(value), @(increValue), @(increRatio));
-    return ruler.minorScale;
-}
-
-
 #pragma mark - 手势
 - (void)addGestures {
     if (self.enableZoom) {
@@ -392,7 +396,6 @@
  根据当前刻度尺和当前总的缩放倍率计算每个刻度间的角度
  */
 - (CGFloat)zoomScaleAngle {
-    
     CGFloat currentRulerScale = 1; //计算当前刻度尺的切换倍率
     for (NSNumber *scale in self.mulRulers.allKeys) {
         if (self.mulRulers[scale] == self.currentRuler) {
@@ -400,10 +403,36 @@
             break;
         }
     }
-    CGFloat angleScale = self.currentZoomScale - currentRulerScale + 1;
-    return self.currentRuler.scaleAngle * angleScale;
+    CGFloat angleScale = (self.currentZoomScale - currentRulerScale)/currentRulerScale;
+    return self.currentRuler.scaleAngle * (1+angleScale);
 }
 
+/**
+ 根据尺子对象和值返回对应的刻度属性对象
+ 
+ @param ruler 尺子
+ @param value 值
+ @return 刻度
+ */
+- (XTRulerScale *)scaleWithRuler:(XTRuler *)ruler Value:(CGFloat)value {
+    CGFloat increValue = value - ruler.minValue; //值和最小值（原点）的值差
+    CGFloat increRatio = increValue/ruler.scaleValue; //和刻度间值的倍数
+    if (increRatio - (NSInteger)(increRatio) != 0) { //没有整除说明这个值不需要画刻度
+        return nil;
+    }
+    
+    NSInteger iRatio = (NSInteger)increRatio;
+    
+    if (iRatio % (ruler.minorScaleCount * ruler.markMajorScaleCount) == 0) {
+        return ruler.markScale;
+    }
+    
+    if (iRatio % ruler.minorScaleCount == 0) {
+        return ruler.unmarkScale;
+    }
+    
+    return ruler.minorScale;
+}
 #pragma mark - 坐标转换
 
 /**

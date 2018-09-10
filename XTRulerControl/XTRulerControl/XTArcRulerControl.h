@@ -49,7 +49,7 @@ typedef NS_ENUM(NSUInteger, XTRulerMarkDirection) {
 @property (nonatomic, assign) CGFloat minValue;                     /**< 最小值 */
 @property (nonatomic, assign) CGFloat maxValue;                     /**< 最大值 */
 @property (nonatomic, assign) CGFloat scaleValue;                   /**< 每个刻度间的值差 */
-@property (nonatomic, assign) CGFloat scaleAngle;                   /**< 刻度间角度，需转换为π单位，360°=2π */
+@property (nonatomic, assign) CGFloat scaleAngle;                   /**< 刻度间角度，需转换为弧度rad，360°=2π */
 
 //@property (nonatomic, assign) CGFloat scaleSpacing;                 /**< 刻度间距（刻度中心直线距离） */
 @property (nonatomic, strong) XTRulerScale *minorScale;             /**< 小刻度 */
@@ -63,7 +63,7 @@ typedef NS_ENUM(NSUInteger, XTRulerMarkDirection) {
 @property (nonatomic, assign) NSInteger minorScaleCount;            /**< 一个大刻度间的小刻度数量 */
 @property (nonatomic, assign) NSInteger markMajorScaleCount;        /**< 几个大刻度做一个数值标记 */
 @property (nonatomic, copy) NSString *(^markRule)(CGFloat value);   /**< 指定value的刻度应该怎么显示 */
-@property (nonatomic, copy) NSArray<XTRulerFillArea *> *fillAreas;  /**< 填充区域 */
+
 
 @end
 
@@ -75,13 +75,12 @@ typedef NS_ENUM(NSUInteger, XTRulerMarkDirection) {
 @property (nonatomic, assign) CGFloat selectedValue;                /**< 选中的值 */
 @property (nonatomic, assign) CGFloat directionAngle;               /**< 刻度尺总体方向, range is [0, PI*2], default is PI*1.5 */
 @property (nonatomic, assign) CGFloat radius;                       /**< 圆弧半径，默认等于刻度尺宽度（self.frame.size.width） */
+@property (nonatomic, copy)   NSArray<XTRulerFillArea *> *fillAreas;/**< 填充区域 */
 @property (nonatomic, strong) UIColor *indicatorColor;              /**< 指示条颜色 */
-@property (nonatomic, assign) BOOL enableZoom; /**< 缩放开关，默认开 */
+@property (nonatomic, assign) BOOL enableZoom;                      /**< 缩放开关，默认开 */
 
 - (instancetype)init NS_UNAVAILABLE;
 - (instancetype)initWithRuler:(XTRuler *)ruler;
-//- (instancetype)initWithRulers:(NSArray<XTRuler *> *)rulers zoomScales:(NSArray<NSNumber *> *)zoomScales;
-
 
 /**
  使用此构造方法进行创建，支持通过缩放手势在多个刻度尺间进行切换

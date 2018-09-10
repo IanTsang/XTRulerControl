@@ -8,11 +8,11 @@
 
 /* Begin PBXBuildFile section */
 		8C24737E2137C318007FDB77 /* XTRulerControlTestViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 8C24737D2137C318007FDB77 /* XTRulerControlTestViewController.m */; };
+		8C26551C21421BE6004D28C6 /* 未按@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 8C26551B21421BE5004D28C6 /* 未按@2x.png */; };
 		8C2A28F2213931BB0063F948 /* XTArcRulerControl.m in Sources */ = {isa = PBXBuildFile; fileRef = 8C2A28F1213931BB0063F948 /* XTArcRulerControl.m */; };
 		8C2C068F213CC74D007A2DD2 /* UIViewExt.m in Sources */ = {isa = PBXBuildFile; fileRef = 8C2C068D213CC74D007A2DD2 /* UIViewExt.m */; };
 		8C9BB87F213FAC5D007E23F6 /* NSString+XTRuler.m in Sources */ = {isa = PBXBuildFile; fileRef = 8C9BB87E213FAC5D007E23F6 /* NSString+XTRuler.m */; };
 		8C9C8F242133CF4400627D60 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 8C9C8F232133CF4400627D60 /* AppDelegate.m */; };
-		8C9C8F272133CF4400627D60 /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 8C9C8F262133CF4400627D60 /* ViewController.m */; };
 		8C9C8F2A2133CF4400627D60 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 8C9C8F282133CF4400627D60 /* Main.storyboard */; };
 		8C9C8F2C2133CF4500627D60 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8C9C8F2B2133CF4500627D60 /* Assets.xcassets */; };
 		8C9C8F2F2133CF4500627D60 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 8C9C8F2D2133CF4500627D60 /* LaunchScreen.storyboard */; };
@@ -23,6 +23,7 @@
 /* Begin PBXFileReference section */
 		8C24737C2137C318007FDB77 /* XTRulerControlTestViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XTRulerControlTestViewController.h; sourceTree = "<group>"; };
 		8C24737D2137C318007FDB77 /* XTRulerControlTestViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XTRulerControlTestViewController.m; sourceTree = "<group>"; };
+		8C26551B21421BE5004D28C6 /* 未按@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "未按@2x.png"; sourceTree = "<group>"; };
 		8C2A28F0213931BB0063F948 /* XTArcRulerControl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XTArcRulerControl.h; sourceTree = "<group>"; };
 		8C2A28F1213931BB0063F948 /* XTArcRulerControl.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XTArcRulerControl.m; sourceTree = "<group>"; };
 		8C2C068D213CC74D007A2DD2 /* UIViewExt.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = UIViewExt.m; sourceTree = "<group>"; };
@@ -32,8 +33,6 @@
 		8C9C8F1F2133CF4400627D60 /* XTRulerControl.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = XTRulerControl.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		8C9C8F222133CF4400627D60 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		8C9C8F232133CF4400627D60 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
-		8C9C8F252133CF4400627D60 /* ViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ViewController.h; sourceTree = "<group>"; };
-		8C9C8F262133CF4400627D60 /* ViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ViewController.m; sourceTree = "<group>"; };
 		8C9C8F292133CF4400627D60 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		8C9C8F2B2133CF4500627D60 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		8C9C8F2E2133CF4500627D60 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
@@ -82,10 +81,9 @@
 		8C9C8F212133CF4400627D60 /* XTRulerControl */ = {
 			isa = PBXGroup;
 			children = (
+				8C26551B21421BE5004D28C6 /* 未按@2x.png */,
 				8C9C8F222133CF4400627D60 /* AppDelegate.h */,
 				8C9C8F232133CF4400627D60 /* AppDelegate.m */,
-				8C9C8F252133CF4400627D60 /* ViewController.h */,
-				8C9C8F262133CF4400627D60 /* ViewController.m */,
 				8C24737C2137C318007FDB77 /* XTRulerControlTestViewController.h */,
 				8C24737D2137C318007FDB77 /* XTRulerControlTestViewController.m */,
 				8C9C8F282133CF4400627D60 /* Main.storyboard */,
@@ -162,6 +160,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				8C9C8F2F2133CF4500627D60 /* LaunchScreen.storyboard in Resources */,
+				8C26551C21421BE6004D28C6 /* 未按@2x.png in Resources */,
 				8C9C8F2C2133CF4500627D60 /* Assets.xcassets in Resources */,
 				8C9C8F2A2133CF4400627D60 /* Main.storyboard in Resources */,
 			);
@@ -175,7 +174,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				8C2C068F213CC74D007A2DD2 /* UIViewExt.m in Sources */,
-				8C9C8F272133CF4400627D60 /* ViewController.m in Sources */,
 				8C24737E2137C318007FDB77 /* XTRulerControlTestViewController.m in Sources */,
 				8C2A28F2213931BB0063F948 /* XTArcRulerControl.m in Sources */,
 				8C9C8F322133CF4500627D60 /* main.m in Sources */,

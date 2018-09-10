@@ -9,5 +9,10 @@
 #import <UIKit/UIKit.h>
 
 @interface NSString (XTRuler)
-- (void)drawWithBasePoint:(CGPoint)basePoint angle:(CGFloat)angle font:(UIFont *)font color:(UIColor *)color;
+
+
+/**
+ 画旋转文本
+ */
+- (void)xt_drawWithCenterPoint:(CGPoint)centerPoint angle:(CGFloat)angle font:(UIFont *)font color:(UIColor *)color;
 @end
