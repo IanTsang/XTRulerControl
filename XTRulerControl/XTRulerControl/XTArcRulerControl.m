@@ -339,10 +339,10 @@
 }
 
 - (void)onPan:(UIPanGestureRecognizer *)gesture {
-    static CGPoint lastTranslation;
+    static CGPoint previousTrans;
     switch (gesture.state) {
         case UIGestureRecognizerStateBegan:
-            lastTranslation = CGPointZero;
+            previousTrans = CGPointZero;
             if (self.valueChangeBegin) {
                 self.valueChangeBegin(self.selectedValue);
             }
@@ -358,25 +358,22 @@
         case UIGestureRecognizerStateChanged: {
 
             CGPoint translation = [gesture translationInView:self];
-            if (floor(lastTranslation.x) == floor(translation.x) &&
-                floor(lastTranslation.y) == floor(translation.y)) { //限制处理频率，不到1单位的坐标改变不处理
+            if (floor(previousTrans.x) == floor(translation.x) &&
+                floor(previousTrans.y) == floor(translation.y)) { //限制处理频率，不到1单位的坐标改变不处理
                 return;
             }
             
-            //计算x、y偏移量
-            CGFloat moveX = translation.x - lastTranslation.x;
-            CGFloat moveY = translation.y - lastTranslation.y;
-            lastTranslation = translation;
+            CGFloat moveX = translation.x - previousTrans.x;
+            CGFloat moveY = translation.y - previousTrans.y;
+            previousTrans = translation;
             
-            //计算根据刻度尺方向矫正后的x、y偏移量
-            CGFloat realMoveX = moveX * cos(self.directionAngle) + moveY * sin(self.directionAngle);
-            CGFloat realMoveY = moveY * sin(self.directionAngle) + moveX * cos(self.directionAngle);
+            CGFloat realMoveX = moveX * cos(self.directionAngle);
+            CGFloat realMoveY = moveY * sin(self.directionAngle);
             CGFloat move = sqrt(realMoveX * realMoveX + realMoveY * realMoveY);
 
             //计算偏转角度
             CGFloat moveAngle = asin(move/self.radius);
-            
-            //偏转方向，正还是负
+            //TODO: 偏转方向，正还是负，这只是粗略判断，尚未完全弄明白公式，待优化
             if (realMoveX < 0 ||
                 realMoveY < 0) {
                 moveAngle = -moveAngle;
