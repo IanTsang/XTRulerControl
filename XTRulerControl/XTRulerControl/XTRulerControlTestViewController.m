@@ -99,7 +99,7 @@
 
 - (void)viewDidLayoutSubviews {
     [super viewDidLayoutSubviews];
-    _rulerControl.frame = CGRectMake(0, 200, self.view.frame.size.width , 160);
+    _rulerControl.frame = CGRectMake(0, 200, self.view.frame.size.width , 300);
 //    _rulerControl.frame = CGRectMake(0, 200, self.view.frame.size.width , self.view.frame.size.width);
 
     
