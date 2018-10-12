@@ -8,6 +8,13 @@
 
 #import "XTRulerControlTestViewController.h"
 #import "XTArcRulerControl.h"
+
+#define kPlaybackRulerScaleKey10M @(1)      //10分钟一个刻度
+#define kPlaybackRulerScaleKey5M @(2.5)     //5分钟一个刻度
+#define kPlaybackRulerScaleKey20M @(0.4)    //20分钟一个刻度
+#define kPlaybackRulerScaleKey1M @(6)       //1分钟一个刻度
+#define kPlaybackRulerScaleKey1S @(9)       //1秒钟一个刻度
+
 @interface XTRulerControlTestViewController ()
 @property (strong, nonatomic) XTArcRulerControl *rulerControl;
 @property (weak, nonatomic) IBOutlet UISlider *angleSlider;
@@ -22,18 +29,19 @@
         XTRuler *ruler1 = [[XTRuler alloc] init];
         XTRuler *ruler2 = [[XTRuler alloc] init];
         ruler2.scaleValue = 300;
-        ruler2.scaleAngle = ruler1.scaleAngle * (ruler1.scaleValue/ruler2.scaleValue)/4;
-
+        ruler2.scaleAngle = kPlaybackRulerScaleKey5M.floatValue * ruler1.scaleAngle * (ruler2.scaleValue/ruler1.scaleValue);
         
         XTRuler *ruler3 = [[XTRuler alloc] init];
         ruler3.scaleValue = 1200;
-        ruler3.scaleAngle = ruler1.scaleAngle * (ruler1.scaleValue/ruler3.scaleValue);
+        ruler3.scaleAngle = kPlaybackRulerScaleKey20M.floatValue * ruler1.scaleAngle * (ruler3.scaleValue/ruler1.scaleValue);
         
         XTRuler *ruler4 = [[XTRuler alloc] init];
         ruler4.scaleValue = 60;
+        ruler4.scaleAngle = kPlaybackRulerScaleKey1M.floatValue * ruler1.scaleAngle * (ruler4.scaleValue/ruler1.scaleValue);
         ruler4.minorScaleCount = 5;
         
         XTRuler *ruler5 = [[XTRuler alloc] init];
+        ruler5.scaleAngle = ruler4.scaleAngle;
         ruler5.scaleValue = 1;
         ruler5.minorScaleCount = 5;
         ruler5.markMajorScaleCount = 2;
@@ -43,7 +51,6 @@
         ruler5.markRule = ^NSString *(CGFloat value) {
             return [formatter stringFromDate:[NSDate dateWithTimeIntervalSince1970:value]];
         };
-
         
         XTRulerFillArea *fillArea1 = [[XTRulerFillArea alloc] init];
         fillArea1.beginValue = 120;
@@ -55,12 +62,15 @@
         fillArea2.endValue = 8000;
         fillArea2.fillColor = [UIColor colorWithRed:48/255.0 green:58/255.0 blue:88/255.0 alpha:0.5];
         
-        
-        _rulerControl = [[XTArcRulerControl alloc] initWithMultipleRulers:@{@(1):ruler1, @(2.5):ruler2, @(0.4):ruler3, @(6):ruler4, @(9):ruler5}];
+        _rulerControl = [[XTArcRulerControl alloc] initWithMultipleRulers:@{kPlaybackRulerScaleKey10M:ruler1,
+                                                                            kPlaybackRulerScaleKey5M:ruler2,
+                                                                            kPlaybackRulerScaleKey20M:ruler3,
+                                                                            kPlaybackRulerScaleKey1M:ruler4,
+                                                                            kPlaybackRulerScaleKey1S:ruler5}];
         _rulerControl.radius = 400;
-//        _rulerControl.radius = [UIScreen mainScreen].bounds.size.width/2;
-        _rulerControl.backgroundColor = [UIColor whiteColor];
-        _rulerControl.selectedValue = -200;
+        _rulerControl.selectedValue = [NSDate date].timeIntervalSince1970;
+        _rulerControl.minZoomScale = 0.39;
+        _rulerControl.maxZoomScale = 10;
         _rulerControl.fillAreas = @[fillArea1, fillArea2];
         
     
@@ -74,19 +84,10 @@
         
     [self.angleSlider addTarget:self action:@selector(sliderValueChanged:) forControlEvents:UIControlEventValueChanged];
     
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        [self incrementValue];
-    });
+//    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+//        [self incrementValue];
+//    });
     
-    UIButton *button = [[UIButton alloc] initWithFrame:CGRectMake(100, 500, 97, 70)];
-//    button.backgroundColor = [UIColor colorWithWhite:0.1 alpha:1];
-    button.layer.shadowRadius = 4;
-    button.layer.shadowColor = [UIColor colorWithWhite:0 alpha:0.1].CGColor;
-    button.layer.shadowOffset = CGSizeMake(0, 0);
-    button.layer.shadowOpacity = 1;
-
-    [button setImage:[UIImage imageNamed:@"未按"] forState:UIControlStateNormal];
-    [self.view addSubview:button];
 }
 
 - (void)incrementValue {

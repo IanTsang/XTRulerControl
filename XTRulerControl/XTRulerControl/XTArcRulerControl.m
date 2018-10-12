@@ -7,9 +7,12 @@
 //
 
 #import "XTArcRulerControl.h"
+#import <UIKit/UIGestureRecognizerSubclass.h>
 
 @implementation XTRulerFillArea
-
+- (NSString *)debugDescription {
+    return [NSString stringWithFormat:@"<%@:%p>, begin:%.0lf, end:%.0lf, color:%@", NSStringFromClass([self class]), self, self.beginValue, self.endValue, self.fillColor];
+}
 @end
 
 @implementation XTRulerScale
@@ -36,7 +39,7 @@
     if (self) {
         self.backgroundColor = [UIColor colorWithWhite:0 alpha:0.5];
         self.minValue = 0;
-        self.maxValue = [[NSDate date] timeIntervalSince1970];
+        self.maxValue = CGFLOAT_MAX;
         self.scaleValue = 600;
         self.scaleAngle = 2.5 * (M_PI/180);
         self.minorScale = [[XTRulerScale alloc] init];
@@ -51,7 +54,7 @@
         self.minorScaleCount = 6;
         self.markMajorScaleCount = 1;
         NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
-        formatter.dateFormat = @"hh:mm";
+        formatter.dateFormat = @"HH:mm";
         self.markRule = ^NSString *(CGFloat value) {
             return [formatter stringFromDate:[NSDate dateWithTimeIntervalSince1970:value]];
         };
@@ -66,12 +69,13 @@
 @property (nonatomic, assign) CGFloat arcLineWidth;     /**< 圆弧stroke时线的宽度 */
 @property (nonatomic, strong) XTRuler *currentRuler;    /**< 当前刻度尺 */
 @property (nonatomic, assign) CGFloat currentZoomScale; /**< 当前缩放倍率 */
-@property (nonatomic, copy)   NSDictionary<NSNumber*, XTRuler*> *mulRulers; /**< 不同缩放倍率对应的刻度尺 */
+
 @end
 
 @implementation XTArcRulerControl
 
 @synthesize directionAngle = _directionAngle;
+@synthesize radius = _radius;
 
 - (instancetype)initWithRuler:(XTRuler *)ruler {
     if (!ruler) {
@@ -89,6 +93,9 @@
         _currentRuler = mulRulers[@(1)];
         _currentZoomScale = 1;
         _enableZoom = YES;
+        _markDirection = XTRulerMarkDirectionDefault;
+        _minZoomScale = 0.1;
+        _maxZoomScale = 10;
         [self addGestures];
     }
     return self;
@@ -167,10 +174,12 @@
     CGFloat zoomScaleAngle = [self zoomScaleAngle]; //缩放后的每个刻度角度
 
     // >计算当前值距离左右刻度间的值差
-    CGFloat leftSpacingValue = fabs(self.selectedValue);
-    while (leftSpacingValue >= ruler.scaleValue) {
-        leftSpacingValue -= ruler.scaleValue;
-    }
+    CGFloat leftSpacingValue = ((NSInteger)(fabs(self.selectedValue) * 1000000))%((NSInteger)(ruler.scaleValue * 1000000)) / 1000000.0;
+
+//    CGFloat leftSpacingValue = fabs(self.selectedValue);
+//    while (leftSpacingValue >= ruler.scaleValue) {
+//        leftSpacingValue -= ruler.scaleValue;
+//    }
     if (self.selectedValue < 0) {
         leftSpacingValue = ruler.scaleValue - leftSpacingValue;
     }
@@ -179,15 +188,18 @@
     // >算出左右开始画的角度
     CGFloat rightStartAngle = zoomScaleAngle * (rightSpacingValue / ruler.scaleValue);
     CGFloat leftStartAngle = -(zoomScaleAngle * (leftSpacingValue/ ruler.scaleValue));
-
     // 2.画刻度
     // >画右边180°范围的刻度
+
     CGFloat drawAngle = rightStartAngle;
-    CGFloat drawValue = ceil((self.selectedValue-ruler.minValue)/ruler.scaleValue) * ruler.scaleValue + ruler.minValue;
+    CGFloat drawValue = floor(self.selectedValue + rightSpacingValue);
+//    CGFloat drawValue2 = ceil((self.selectedValue-ruler.minValue)/ruler.scaleValue) * ruler.scaleValue + ruler.minValue;
     UIBezierPath *path = [UIBezierPath bezierPath];
     while (drawAngle < M_PI) {
         XTRulerScale *scale = [self scaleWithRuler:ruler Value:drawValue];
         if (!scale) {
+            drawAngle += zoomScaleAngle;
+            drawValue += ruler.scaleValue;
             continue;
         }
         CGPoint startPoint = [self arcPointWithCenter:self.arcCenter raidus:self.radius - scale.topSpacing angle:[self correctAngle:drawAngle]];
@@ -205,13 +217,15 @@
         drawAngle += zoomScaleAngle;
         drawValue += ruler.scaleValue;
     }
-    
     // >画左边180°范围的刻度
     drawAngle = leftStartAngle;
-    drawValue = floor((self.selectedValue-ruler.minValue)/ruler.scaleValue) * ruler.scaleValue + ruler.minValue;
+    drawValue = floor(self.selectedValue - leftSpacingValue);
+//    drawValue = floor((self.selectedValue-ruler.minValue)/ruler.scaleValue) * ruler.scaleValue + ruler.minValue;
     while (drawAngle > -M_PI) {
         XTRulerScale *scale = [self scaleWithRuler:ruler Value:drawValue];
         if (!scale) {
+            drawAngle -= zoomScaleAngle;
+            drawValue -= ruler.scaleValue;
             continue;
         }
         CGPoint startPoint = [self arcPointWithCenter:self.arcCenter raidus:self.radius - scale.topSpacing angle:[self correctAngle:drawAngle]];
@@ -245,7 +259,8 @@
     
     CGFloat markRotateAngle = angle + self.directionAngle; //文字本身旋转角度
     CGPoint markCenterPoint = [self arcPointWithCenter:self.arcCenter raidus:self.radius - ruler.markTopSpacing - textSize.height/2  angle:[self correctAngle:angle]];
-    if (ruler.markDirection == XTRulerMarkDirectionHorizontal) {
+    if ((ruler.markDirection == XTRulerMarkDirectionHorizontal) ||
+        (self.markDirection == XTRulerMarkDirectionHorizontal)) {
         markRotateAngle = markRotateAngle + M_PI_2;
         markCenterPoint = [self arcPointWithCenter:self.arcCenter raidus:self.radius - ruler.markTopSpacing - textSize.width/2  angle:[self correctAngle:angle]];
 
@@ -298,8 +313,18 @@
             CGFloat increScale = (gesture.scale - zoomScale)/zoomScale;
             zoomScale = gesture.scale;
             
-            self.currentZoomScale *= (1 + increScale);
             
+            XTRuler *oldRuler =  self.currentRuler;
+            
+            CGFloat newZoomScale = self.currentZoomScale * (1+increScale);
+            if (newZoomScale < _minZoomScale || newZoomScale > _maxZoomScale) {
+                return;
+            }
+            self.currentZoomScale = newZoomScale;
+            
+            if (oldRuler != self.currentRuler) { //刻度精度改变了则停止手势
+                [gesture setState:UIGestureRecognizerStateEnded];
+            }
             NSLog(@"pinch scale: %@, currentZoomScale: %@", @(gesture.scale), @(self.currentZoomScale));
         }
             
@@ -318,9 +343,15 @@
     switch (gesture.state) {
         case UIGestureRecognizerStateBegan:
             previousTrans = CGPointZero;
+            if (self.valueChangeBegin) {
+                self.valueChangeBegin(self.selectedValue);
+            }
             break;
         case UIGestureRecognizerStateEnded: {
             CGPoint speed = [gesture velocityInView:self];
+            if (self.valueChangeEnd) {
+                self.valueChangeEnd(self.selectedValue);
+            }
             NSLog(@"velocityInView %@ currentValue:%@", @(speed), @(self.selectedValue));
         }
             break;
@@ -350,8 +381,13 @@
             
             //根据偏转角度计算当前值
 //            self.selectedValue -= moveAngle * self.currentRuler.scaleValue/(self.currentRuler.scaleAngle * self.currentZoomScale);
-            self.selectedValue -= moveAngle * self.currentRuler.scaleValue/[self zoomScaleAngle];
-
+            CGFloat newValue = self.selectedValue - moveAngle * self.currentRuler.scaleValue/[self zoomScaleAngle];
+            if (self.valueShouldChange) {
+                if (!self.valueShouldChange(self.selectedValue, newValue)) {
+                    return;
+                }
+            }
+            self.selectedValue = newValue;
             
         }
             break;
@@ -509,19 +545,19 @@
 
 - (CGFloat)directionAngle {
     if (_directionAngle < 0 || _directionAngle > M_PI * 2) {
-        return M_PI * 1.5;
+        return 0;
     }
     return _directionAngle;
 }
 
-- (CGPoint)arcCenter {
-    //TODO: arcCenter需要频繁使用，在getter实时计算可能比较耗性能，待优化
-    CGFloat radius = self.radius + self.arcLineWidth/2;
-    CGPoint rotateCenter = CGPointMake(self.width/2, self.height/2);
-    //不同角度对应圆弧的中心点的轨迹是一个椭圆
-    CGPoint center = [self getArcPointWithCenter:rotateCenter Size:CGSizeMake(radius*2 - self.width, radius*2 - self.height) angle:self.directionAngle + M_PI_2];
-    return center;
-}
+//- (CGPoint)arcCenter {
+//    //TODO: arcCenter需要频繁使用，在getter实时计算可能比较耗性能，待优化
+//    CGFloat radius = self.radius + self.arcLineWidth/2;
+//    CGPoint rotateCenter = CGPointMake(self.width/2, self.height/2);
+//    //不同角度对应圆弧的中心点的轨迹是一个椭圆
+//    CGPoint center = [self getArcPointWithCenter:rotateCenter Size:CGSizeMake(radius*2 - self.width, radius*2 - self.height) angle:self.directionAngle + M_PI_2];
+//    return center;
+//}
 
 - (CGFloat)arcLineWidth {
     if (_arcLineWidth <= 0) {
@@ -538,22 +574,59 @@
 }
 
 #pragma mark - setter
+- (void)setFrame:(CGRect)frame {
+    [super setFrame:frame];
+    [self updateArcCenter];
+    [self setNeedsDisplayInMainQueue];
+}
 
 - (void)setDirectionAngle:(CGFloat)directionAngle {
     _directionAngle = directionAngle;
-    [self setNeedsDisplay];
+    [self updateArcCenter];
+    [self setNeedsDisplayInMainQueue];
 }
 
 - (void)setSelectedValue:(CGFloat)selectedValue {
     _selectedValue = selectedValue;
-    [self setNeedsDisplay];
+    [self setNeedsDisplayInMainQueue];
 }
 
 - (void)setCurrentZoomScale:(CGFloat)currentZoomScale {
     [self updateCurrentRulerWitOldZoomScale:_currentZoomScale newZoomScale:currentZoomScale];
     _currentZoomScale = currentZoomScale;
-    [self setNeedsDisplay];
+    [self setNeedsDisplayInMainQueue];
 }
 
+- (void)setMarkDirection:(XTRulerMarkDirection)markDirection {
+    _markDirection = markDirection;
+    [self setNeedsDisplayInMainQueue];
+}
+
+- (void)setFillAreas:(NSArray<XTRulerFillArea *> *)fillAreas {
+    _fillAreas = [fillAreas copy];
+    [self setNeedsDisplayInMainQueue];
+}
+
+- (void)setNeedsDisplayInMainQueue {
+    __weak typeof(self) weakSelf = self;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [weakSelf setNeedsDisplay];
+    });
+}
+
+- (void)setRadius:(CGFloat)radius {
+    _radius = radius;
+    [self updateArcCenter];
+    [self setNeedsDisplayInMainQueue];
+}
+
+#pragma mark -
+- (void)updateArcCenter {
+    CGFloat radius = self.radius + self.arcLineWidth/2;
+    CGPoint rotateCenter = CGPointMake(self.width/2, self.height/2);
+    //不同角度对应圆弧的中心点的轨迹是一个椭圆
+    CGPoint center = [self getArcPointWithCenter:rotateCenter Size:CGSizeMake(radius*2 - self.width, radius*2 - self.height) angle:self.directionAngle + M_PI_2];
+    self.arcCenter = center;
+}
 
 @end
